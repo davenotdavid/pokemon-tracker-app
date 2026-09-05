@@ -24,6 +24,17 @@ It consumes the [pokemon-tracker-api](https://github.com/davenotdavid/pokemon-tr
 - Navigation Compose
 - JUnit + MockK for unit tests
 
+## Architecture
+
+MVVM with a unidirectional data flow: the UI never mutates state directly, it only calls
+functions on the `ViewModel` (`loadPokemon()`, `toggleCaptured()`). The `ViewModel` exposes an
+immutable `StateFlow<PokemonUiState>` (`Loading` / `Error` / `Success`) that Compose collects and
+renders, so every state change replaces the whole object rather than mutating pieces of it in
+place. The `ViewModel` delegates to `PokemonRepository`, which tries the network first and falls
+back to the local Room cache on failure. Dependencies are constructor-injected via Hilt, which is
+what lets `PokemonRepository` and `PokemonViewModel` be unit tested with MockK fakes instead of
+the real network/database.
+
 ## Running the app
 
 Open the project in Android Studio and run the `app` configuration on an emulator or device.
