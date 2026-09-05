@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.davenotdavid.pokemontrackerapp.data.Pokemon
 import com.davenotdavid.pokemontrackerapp.data.PokemonRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,6 +37,8 @@ class PokemonViewModel @Inject constructor(
             _uiState.value = try {
                 // Network first: if it succeeds, the repository has already refreshed the cache too.
                 PokemonUiState.Success(repository.refreshFromNetwork().sortedBy { it.id })
+            } catch (ex: CancellationException) {
+                throw ex
             } catch (ex: Exception) {
                 // Offline or the API is unreachable: fall back to whatever was cached last time.
                 val cached = repository.getCached().sortedBy { it.id }

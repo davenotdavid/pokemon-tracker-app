@@ -2,6 +2,7 @@ package com.davenotdavid.pokemontrackerapp.data
 
 import com.davenotdavid.pokemontrackerapp.data.local.PokemonDao
 import com.davenotdavid.pokemontrackerapp.network.PokemonService
+import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 
 class PokemonRepository @Inject constructor(
@@ -20,6 +21,8 @@ class PokemonRepository @Inject constructor(
     suspend fun setCaptured(pokemon: Pokemon, captured: Boolean): Pokemon {
         val updated = try {
             service.update(pokemon.id, pokemon.copy(isCaptured = captured))
+        } catch (ex: CancellationException) {
+            throw ex
         } catch (ex: Exception) {
             pokemon.copy(isCaptured = captured)
         }
