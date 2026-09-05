@@ -40,3 +40,7 @@ Unit tests cover `PokemonRepository` (network/cache write-through, offline fallb
 ## CI
 
 GitHub Actions (`.github/workflows/ci.yml`) runs the unit test suite and builds the debug APK on every push to `main` and on pull requests.
+
+## License
+
+[MIT](LICENSE)
