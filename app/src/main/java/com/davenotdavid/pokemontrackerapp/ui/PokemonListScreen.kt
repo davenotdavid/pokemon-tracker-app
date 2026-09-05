@@ -56,6 +56,13 @@ fun PokemonListScreen(
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(16.dp),
                 )
+                if (uiState.isOffline) {
+                    Text(
+                        text = "Offline — showing cached data",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    )
+                }
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     items(uiState.pokemon, key = { it.id }) { pokemon ->
                         PokemonRow(

@@ -15,7 +15,7 @@ import javax.inject.Inject
 sealed interface PokemonUiState {
     data object Loading : PokemonUiState
     data class Error(val message: String) : PokemonUiState
-    data class Success(val pokemon: List<Pokemon>) : PokemonUiState
+    data class Success(val pokemon: List<Pokemon>, val isOffline: Boolean = false) : PokemonUiState
 }
 
 @HiltViewModel
@@ -34,33 +34,29 @@ class PokemonViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = PokemonUiState.Loading
             _uiState.value = try {
-                PokemonUiState.Success(repository.getAll().sortedBy { it.id })
-            } catch (e: Exception) {
-                PokemonUiState.Error(e.message ?: "Failed to load Pokemon")
+                // Network first: if it succeeds, the repository has already refreshed the cache too.
+                PokemonUiState.Success(repository.refreshFromNetwork().sortedBy { it.id })
+            } catch (ex: Exception) {
+                // Offline or the API is unreachable: fall back to whatever was cached last time.
+                val cached = repository.getCached().sortedBy { it.id }
+                if (cached.isNotEmpty()) {
+                    PokemonUiState.Success(cached, isOffline = true)
+                } else {
+                    PokemonUiState.Error(ex.message ?: "Failed to load Pokemon")
+                }
             }
         }
     }
 
     fun toggleCaptured(pokemon: Pokemon) {
-        val newCaptured = !pokemon.isCaptured
-        updateLocalPokemon(pokemon.copy(isCaptured = newCaptured))
-
         viewModelScope.launch {
-            try {
-                val updated = repository.setCaptured(pokemon, newCaptured)
-                updateLocalPokemon(updated)
-            } catch (ex: Exception) {
-                updateLocalPokemon(pokemon)
-            }
-        }
-    }
-
-    private fun updateLocalPokemon(updated: Pokemon) {
-        _uiState.update { state ->
-            if (state is PokemonUiState.Success) {
-                PokemonUiState.Success(state.pokemon.map { if (it.id == updated.id) updated else it })
-            } else {
-                state
+            val updated = repository.setCaptured(pokemon, !pokemon.isCaptured)
+            _uiState.update { state ->
+                if (state is PokemonUiState.Success) {
+                    state.copy(pokemon = state.pokemon.map { if (it.id == updated.id) updated else it })
+                } else {
+                    state
+                }
             }
         }
     }
