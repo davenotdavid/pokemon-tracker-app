@@ -20,8 +20,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.davenotdavid.pokemontrackerapp.data.Pokemon
+import com.davenotdavid.pokemontrackerapp.ui.theme.PokemonTrackerAppTheme
 
 @Composable
 fun PokemonListScreen(
@@ -94,4 +96,62 @@ private fun PokemonRow(
             .fillMaxWidth()
             .clickable(onClick = onClick),
     )
+}
+
+private val previewPokemon = listOf(
+    Pokemon(id = 1, name = "Bulbasaur", type = listOf("Grass", "Poison"), hp = 45, isCaptured = true),
+    Pokemon(id = 4, name = "Charmander", type = listOf("Fire"), hp = 39),
+    Pokemon(id = 7, name = "Squirtle", type = listOf("Water"), hp = 44),
+)
+
+@Preview(showBackground = true)
+@Composable
+private fun PokemonListScreenSuccessPreview() {
+    PokemonTrackerAppTheme {
+        PokemonListScreen(
+            uiState = PokemonUiState.Success(previewPokemon),
+            onPokemonClick = {},
+            onToggleCaptured = {},
+            onRetry = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PokemonListScreenOfflinePreview() {
+    PokemonTrackerAppTheme {
+        PokemonListScreen(
+            uiState = PokemonUiState.Success(previewPokemon, isOffline = true),
+            onPokemonClick = {},
+            onToggleCaptured = {},
+            onRetry = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PokemonListScreenLoadingPreview() {
+    PokemonTrackerAppTheme {
+        PokemonListScreen(
+            uiState = PokemonUiState.Loading,
+            onPokemonClick = {},
+            onToggleCaptured = {},
+            onRetry = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PokemonListScreenErrorPreview() {
+    PokemonTrackerAppTheme {
+        PokemonListScreen(
+            uiState = PokemonUiState.Error("Unable to reach the server"),
+            onPokemonClick = {},
+            onToggleCaptured = {},
+            onRetry = {},
+        )
+    }
 }
