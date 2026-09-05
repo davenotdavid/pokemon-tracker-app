@@ -13,10 +13,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,12 +27,14 @@ import androidx.compose.ui.unit.dp
 import com.davenotdavid.pokemontrackerapp.data.Pokemon
 import com.davenotdavid.pokemontrackerapp.ui.theme.PokemonTrackerAppTheme
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PokemonListScreen(
     uiState: PokemonUiState,
+    isRefreshing: Boolean,
     onPokemonClick: (Pokemon) -> Unit,
     onToggleCaptured: (Pokemon) -> Unit,
-    onRetry: () -> Unit,
+    onRefresh: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (uiState) {
@@ -45,34 +49,40 @@ fun PokemonListScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(text = uiState.message, style = MaterialTheme.typography.bodyLarge)
                     Spacer(modifier = Modifier.height(12.dp))
-                    Button(onClick = onRetry) { Text("Retry") }
+                    Button(onClick = onRefresh) { Text("Retry") }
                 }
             }
         }
 
         is PokemonUiState.Success -> {
             val capturedCount = uiState.pokemon.count { it.isCaptured }
-            Column(modifier = modifier.fillMaxSize()) {
-                Text(
-                    text = "Captured $capturedCount / ${uiState.pokemon.size}",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(16.dp),
-                )
-                if (uiState.isOffline) {
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = onRefresh,
+                modifier = modifier.fillMaxSize(),
+            ) {
+                Column(modifier = Modifier.fillMaxSize()) {
                     Text(
-                        text = "Offline — showing cached data",
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(horizontal = 16.dp),
+                        text = "Captured $capturedCount / ${uiState.pokemon.size}",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(16.dp),
                     )
-                }
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(uiState.pokemon, key = { it.id }) { pokemon ->
-                        PokemonRow(
-                            pokemon = pokemon,
-                            onClick = { onPokemonClick(pokemon) },
-                            onToggleCaptured = { onToggleCaptured(pokemon) },
+                    if (uiState.isOffline) {
+                        Text(
+                            text = "Offline — showing cached data",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(horizontal = 16.dp),
                         )
-                        HorizontalDivider()
+                    }
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        items(uiState.pokemon, key = { it.id }) { pokemon ->
+                            PokemonRow(
+                                pokemon = pokemon,
+                                onClick = { onPokemonClick(pokemon) },
+                                onToggleCaptured = { onToggleCaptured(pokemon) },
+                            )
+                            HorizontalDivider()
+                        }
                     }
                 }
             }
@@ -110,9 +120,10 @@ private fun PokemonListScreenSuccessPreview() {
     PokemonTrackerAppTheme {
         PokemonListScreen(
             uiState = PokemonUiState.Success(previewPokemon),
+            isRefreshing = false,
             onPokemonClick = {},
             onToggleCaptured = {},
-            onRetry = {},
+            onRefresh = {},
         )
     }
 }
@@ -123,9 +134,10 @@ private fun PokemonListScreenOfflinePreview() {
     PokemonTrackerAppTheme {
         PokemonListScreen(
             uiState = PokemonUiState.Success(previewPokemon, isOffline = true),
+            isRefreshing = false,
             onPokemonClick = {},
             onToggleCaptured = {},
-            onRetry = {},
+            onRefresh = {},
         )
     }
 }
@@ -136,9 +148,10 @@ private fun PokemonListScreenLoadingPreview() {
     PokemonTrackerAppTheme {
         PokemonListScreen(
             uiState = PokemonUiState.Loading,
+            isRefreshing = false,
             onPokemonClick = {},
             onToggleCaptured = {},
-            onRetry = {},
+            onRefresh = {},
         )
     }
 }
@@ -149,9 +162,10 @@ private fun PokemonListScreenErrorPreview() {
     PokemonTrackerAppTheme {
         PokemonListScreen(
             uiState = PokemonUiState.Error("Unable to reach the server"),
+            isRefreshing = false,
             onPokemonClick = {},
             onToggleCaptured = {},
-            onRetry = {},
+            onRefresh = {},
         )
     }
 }

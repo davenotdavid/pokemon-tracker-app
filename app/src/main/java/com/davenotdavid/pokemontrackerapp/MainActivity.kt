@@ -45,6 +45,7 @@ class MainActivity : ComponentActivity() {
 fun PokemonTrackerApp(viewModel: PokemonViewModel = hiltViewModel()) {
     val navController = rememberNavController()
     val uiState by viewModel.uiState.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
 
     Scaffold(
         topBar = {
@@ -62,9 +63,10 @@ fun PokemonTrackerApp(viewModel: PokemonViewModel = hiltViewModel()) {
             composable("list") {
                 PokemonListScreen(
                     uiState = uiState,
+                    isRefreshing = isRefreshing,
                     onPokemonClick = { pokemon -> navController.navigate("detail/${pokemon.id}") },
                     onToggleCaptured = { pokemon -> viewModel.toggleCaptured(pokemon) },
-                    onRetry = { viewModel.loadPokemon() },
+                    onRefresh = { viewModel.loadPokemon() },
                 )
             }
             composable(

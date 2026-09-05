@@ -27,13 +27,22 @@ class PokemonViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<PokemonUiState>(PokemonUiState.Loading)
     val uiState: StateFlow<PokemonUiState> = _uiState.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     init {
         loadPokemon()
     }
 
     fun loadPokemon() {
         viewModelScope.launch {
-            _uiState.value = PokemonUiState.Loading
+            // Only blank the screen on the very first load. A pull-to-refresh while Pokemon are
+            // already showing should keep them on screen and just spin the refresh indicator.
+            if (_uiState.value is PokemonUiState.Success) {
+                _isRefreshing.value = true
+            } else {
+                _uiState.value = PokemonUiState.Loading
+            }
             _uiState.value = try {
                 // Network first: if it succeeds, the repository has already refreshed the cache too.
                 PokemonUiState.Success(repository.refreshFromNetwork().sortedBy { it.id })
@@ -47,6 +56,8 @@ class PokemonViewModel @Inject constructor(
                 } else {
                     PokemonUiState.Error(ex.message ?: "Failed to load Pokemon")
                 }
+            } finally {
+                _isRefreshing.value = false
             }
         }
     }
