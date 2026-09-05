@@ -1,6 +1,7 @@
 # Pokemon Tracker App
 
 [![CI](https://github.com/davenotdavid/pokemon-tracker-app/actions/workflows/ci.yml/badge.svg)](https://github.com/davenotdavid/pokemon-tracker-app/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 An Android app for browsing Pokemon and tracking which ones you've captured, built with Kotlin and Jetpack Compose.
 
