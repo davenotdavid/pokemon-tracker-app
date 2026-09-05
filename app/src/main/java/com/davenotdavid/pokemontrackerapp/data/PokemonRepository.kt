@@ -1,8 +1,9 @@
 package com.davenotdavid.pokemontrackerapp.data
 
 import com.davenotdavid.pokemontrackerapp.network.PokemonService
+import javax.inject.Inject
 
-class PokemonRepository(private val service: PokemonService) {
+class PokemonRepository @Inject constructor(private val service: PokemonService) {
 
     suspend fun getAll(): List<Pokemon> = service.getAll()
 

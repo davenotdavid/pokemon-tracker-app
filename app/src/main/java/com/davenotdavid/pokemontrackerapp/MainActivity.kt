@@ -14,7 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -25,7 +25,9 @@ import com.davenotdavid.pokemontrackerapp.ui.PokemonListScreen
 import com.davenotdavid.pokemontrackerapp.ui.PokemonUiState
 import com.davenotdavid.pokemontrackerapp.ui.PokemonViewModel
 import com.davenotdavid.pokemontrackerapp.ui.theme.PokemonTrackerAppTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,7 +42,7 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PokemonTrackerApp(viewModel: PokemonViewModel = viewModel()) {
+fun PokemonTrackerApp(viewModel: PokemonViewModel = hiltViewModel()) {
     val navController = rememberNavController()
     val uiState by viewModel.uiState.collectAsState()
 

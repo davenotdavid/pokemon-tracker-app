@@ -4,12 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.davenotdavid.pokemontrackerapp.data.Pokemon
 import com.davenotdavid.pokemontrackerapp.data.PokemonRepository
-import com.davenotdavid.pokemontrackerapp.network.RetrofitInstance
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 sealed interface PokemonUiState {
     data object Loading : PokemonUiState
@@ -17,8 +18,9 @@ sealed interface PokemonUiState {
     data class Success(val pokemon: List<Pokemon>) : PokemonUiState
 }
 
-class PokemonViewModel(
-    private val repository: PokemonRepository = PokemonRepository(RetrofitInstance.api),
+@HiltViewModel
+class PokemonViewModel @Inject constructor(
+    private val repository: PokemonRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<PokemonUiState>(PokemonUiState.Loading)
