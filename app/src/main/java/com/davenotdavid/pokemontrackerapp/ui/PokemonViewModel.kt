@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 sealed interface PokemonUiState {
@@ -50,6 +51,7 @@ class PokemonViewModel @Inject constructor(
                 throw ex
             } catch (ex: Exception) {
                 // Offline or the API is unreachable: fall back to whatever was cached last time.
+                Timber.w(ex, "Failed to refresh Pokemon from the network")
                 val cached = repository.getCached().sortedBy { it.id }
                 if (cached.isNotEmpty()) {
                     PokemonUiState.Success(cached, isOffline = true)

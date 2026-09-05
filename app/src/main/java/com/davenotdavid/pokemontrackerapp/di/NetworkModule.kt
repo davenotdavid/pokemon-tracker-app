@@ -1,5 +1,6 @@
 package com.davenotdavid.pokemontrackerapp.di
 
+import com.davenotdavid.pokemontrackerapp.BuildConfig
 import com.davenotdavid.pokemontrackerapp.network.PokemonService
 import dagger.Module
 import dagger.Provides
@@ -21,7 +22,11 @@ object NetworkModule {
     @Singleton
     fun provideOkHttpClient(): OkHttpClient =
         OkHttpClient.Builder()
-            .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY })
+            .addInterceptor(
+                HttpLoggingInterceptor().apply {
+                    level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE
+                },
+            )
             .build()
 
     @Provides
