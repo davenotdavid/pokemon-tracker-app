@@ -31,34 +31,32 @@ import com.davenotdavid.pokemontrackerapp.ui.theme.PokemonTrackerAppTheme
 @Composable
 fun PokemonListScreen(
     uiState: PokemonUiState,
-    isRefreshing: Boolean,
     onPokemonClick: (Pokemon) -> Unit,
-    onToggleCaptured: (Pokemon) -> Unit,
-    onRefresh: () -> Unit,
+    onIntent: (PokemonIntent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    when (uiState) {
-        is PokemonUiState.Loading -> {
+    when {
+        uiState.isLoading -> {
             Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
         }
 
-        is PokemonUiState.Error -> {
+        uiState.errorMessage != null -> {
             Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = uiState.message, style = MaterialTheme.typography.bodyLarge)
+                    Text(text = uiState.errorMessage, style = MaterialTheme.typography.bodyLarge)
                     Spacer(modifier = Modifier.height(12.dp))
-                    Button(onClick = onRefresh) { Text("Retry") }
+                    Button(onClick = { onIntent(PokemonIntent.Refresh) }) { Text("Retry") }
                 }
             }
         }
 
-        is PokemonUiState.Success -> {
+        else -> {
             val capturedCount = uiState.pokemon.count { it.isCaptured }
             PullToRefreshBox(
-                isRefreshing = isRefreshing,
-                onRefresh = onRefresh,
+                isRefreshing = uiState.isRefreshing,
+                onRefresh = { onIntent(PokemonIntent.Refresh) },
                 modifier = modifier.fillMaxSize(),
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
@@ -79,7 +77,7 @@ fun PokemonListScreen(
                             PokemonRow(
                                 pokemon = pokemon,
                                 onClick = { onPokemonClick(pokemon) },
-                                onToggleCaptured = { onToggleCaptured(pokemon) },
+                                onToggleCaptured = { onIntent(PokemonIntent.ToggleCaptured(pokemon)) },
                             )
                             HorizontalDivider()
                         }
@@ -119,11 +117,9 @@ private val previewPokemon = listOf(
 private fun PokemonListScreenSuccessPreview() {
     PokemonTrackerAppTheme {
         PokemonListScreen(
-            uiState = PokemonUiState.Success(previewPokemon),
-            isRefreshing = false,
+            uiState = PokemonUiState(pokemon = previewPokemon),
             onPokemonClick = {},
-            onToggleCaptured = {},
-            onRefresh = {},
+            onIntent = {},
         )
     }
 }
@@ -133,11 +129,9 @@ private fun PokemonListScreenSuccessPreview() {
 private fun PokemonListScreenOfflinePreview() {
     PokemonTrackerAppTheme {
         PokemonListScreen(
-            uiState = PokemonUiState.Success(previewPokemon, isOffline = true),
-            isRefreshing = false,
+            uiState = PokemonUiState(pokemon = previewPokemon, isOffline = true),
             onPokemonClick = {},
-            onToggleCaptured = {},
-            onRefresh = {},
+            onIntent = {},
         )
     }
 }
@@ -147,11 +141,9 @@ private fun PokemonListScreenOfflinePreview() {
 private fun PokemonListScreenLoadingPreview() {
     PokemonTrackerAppTheme {
         PokemonListScreen(
-            uiState = PokemonUiState.Loading,
-            isRefreshing = false,
+            uiState = PokemonUiState(isLoading = true),
             onPokemonClick = {},
-            onToggleCaptured = {},
-            onRefresh = {},
+            onIntent = {},
         )
     }
 }
@@ -161,11 +153,9 @@ private fun PokemonListScreenLoadingPreview() {
 private fun PokemonListScreenErrorPreview() {
     PokemonTrackerAppTheme {
         PokemonListScreen(
-            uiState = PokemonUiState.Error("Unable to reach the server"),
-            isRefreshing = false,
+            uiState = PokemonUiState(errorMessage = "Unable to reach the server"),
             onPokemonClick = {},
-            onToggleCaptured = {},
-            onRefresh = {},
+            onIntent = {},
         )
     }
 }

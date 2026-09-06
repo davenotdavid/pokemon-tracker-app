@@ -13,6 +13,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -37,50 +38,53 @@ class PokemonViewModelTest {
     }
 
     @Test
-    fun `loadPokemon emits Success sorted by id when the network succeeds`() = runTest {
+    fun `LoadPokemon emits pokemon sorted by id when the network succeeds`() = runTest {
         coEvery { repository.refreshFromNetwork() } returns listOf(charmander, bulbasaur)
 
         val viewModel = PokemonViewModel(repository)
 
-        val state = viewModel.uiState.value as PokemonUiState.Success
+        val state = viewModel.uiState.value
         assertEquals(listOf(bulbasaur, charmander), state.pokemon)
+        assertFalse(state.isLoading)
         assertFalse(state.isOffline)
+        assertNull(state.errorMessage)
     }
 
     @Test
-    fun `loadPokemon falls back to the cache and flags offline when the network fails`() = runTest {
+    fun `LoadPokemon falls back to the cache and flags offline when the network fails`() = runTest {
         coEvery { repository.refreshFromNetwork() } throws IOException("no network")
         coEvery { repository.getCached() } returns listOf(bulbasaur)
 
         val viewModel = PokemonViewModel(repository)
 
-        val state = viewModel.uiState.value as PokemonUiState.Success
+        val state = viewModel.uiState.value
         assertEquals(listOf(bulbasaur), state.pokemon)
         assertTrue(state.isOffline)
+        assertNull(state.errorMessage)
     }
 
     @Test
-    fun `loadPokemon emits Error when the network fails and nothing is cached`() = runTest {
+    fun `LoadPokemon surfaces an error when the network fails and nothing is cached`() = runTest {
         coEvery { repository.refreshFromNetwork() } throws IOException("boom")
         coEvery { repository.getCached() } returns emptyList()
 
         val viewModel = PokemonViewModel(repository)
 
         val state = viewModel.uiState.value
-        assertTrue(state is PokemonUiState.Error)
-        assertEquals("boom", (state as PokemonUiState.Error).message)
+        assertEquals("boom", state.errorMessage)
+        assertTrue(state.pokemon.isEmpty())
     }
 
     @Test
-    fun `toggleCaptured updates only the toggled pokemon`() = runTest {
+    fun `ToggleCaptured updates only the toggled pokemon`() = runTest {
         coEvery { repository.refreshFromNetwork() } returns listOf(bulbasaur, charmander)
         val updatedBulbasaur = bulbasaur.copy(isCaptured = true)
         coEvery { repository.setCaptured(bulbasaur, true) } returns updatedBulbasaur
 
         val viewModel = PokemonViewModel(repository)
-        viewModel.toggleCaptured(bulbasaur)
+        viewModel.onIntent(PokemonIntent.ToggleCaptured(bulbasaur))
 
-        val state = viewModel.uiState.value as PokemonUiState.Success
+        val state = viewModel.uiState.value
         assertEquals(updatedBulbasaur, state.pokemon.first { it.id == bulbasaur.id })
         assertEquals(charmander, state.pokemon.first { it.id == charmander.id })
     }

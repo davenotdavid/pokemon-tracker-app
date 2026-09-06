@@ -16,7 +16,7 @@ import com.davenotdavid.pokemontrackerapp.ui.theme.PokemonTrackerAppTheme
 @Composable
 fun PokemonDetailScreen(
     pokemon: Pokemon,
-    onToggleCaptured: (Pokemon) -> Unit,
+    onIntent: (PokemonIntent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxSize().padding(24.dp)) {
@@ -28,7 +28,7 @@ fun PokemonDetailScreen(
             style = MaterialTheme.typography.bodyLarge,
         )
         Button(
-            onClick = { onToggleCaptured(pokemon) },
+            onClick = { onIntent(PokemonIntent.ToggleCaptured(pokemon)) },
             modifier = Modifier.padding(top = 16.dp),
         ) {
             Text(if (pokemon.isCaptured) "Mark as not captured" else "Mark as captured")
@@ -42,7 +42,7 @@ private fun PokemonDetailScreenNotCapturedPreview() {
     PokemonTrackerAppTheme {
         PokemonDetailScreen(
             pokemon = Pokemon(id = 1, name = "Bulbasaur", type = listOf("Grass", "Poison"), hp = 45),
-            onToggleCaptured = {},
+            onIntent = {},
         )
     }
 }
@@ -53,7 +53,7 @@ private fun PokemonDetailScreenCapturedPreview() {
     PokemonTrackerAppTheme {
         PokemonDetailScreen(
             pokemon = Pokemon(id = 4, name = "Charmander", type = listOf("Fire"), hp = 39, isCaptured = true),
-            onToggleCaptured = {},
+            onIntent = {},
         )
     }
 }

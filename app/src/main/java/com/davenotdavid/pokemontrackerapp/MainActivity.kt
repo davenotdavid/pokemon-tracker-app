@@ -22,7 +22,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.davenotdavid.pokemontrackerapp.ui.PokemonDetailScreen
 import com.davenotdavid.pokemontrackerapp.ui.PokemonListScreen
-import com.davenotdavid.pokemontrackerapp.ui.PokemonUiState
 import com.davenotdavid.pokemontrackerapp.ui.PokemonViewModel
 import com.davenotdavid.pokemontrackerapp.ui.theme.PokemonTrackerAppTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -45,7 +44,6 @@ class MainActivity : ComponentActivity() {
 fun PokemonTrackerApp(viewModel: PokemonViewModel = hiltViewModel()) {
     val navController = rememberNavController()
     val uiState by viewModel.uiState.collectAsState()
-    val isRefreshing by viewModel.isRefreshing.collectAsState()
 
     Scaffold(
         topBar = {
@@ -63,10 +61,8 @@ fun PokemonTrackerApp(viewModel: PokemonViewModel = hiltViewModel()) {
             composable("list") {
                 PokemonListScreen(
                     uiState = uiState,
-                    isRefreshing = isRefreshing,
                     onPokemonClick = { pokemon -> navController.navigate("detail/${pokemon.id}") },
-                    onToggleCaptured = { pokemon -> viewModel.toggleCaptured(pokemon) },
-                    onRefresh = { viewModel.loadPokemon() },
+                    onIntent = viewModel::onIntent,
                 )
             }
             composable(
@@ -74,11 +70,11 @@ fun PokemonTrackerApp(viewModel: PokemonViewModel = hiltViewModel()) {
                 arguments = listOf(navArgument("id") { type = NavType.IntType }),
             ) { backStackEntry ->
                 val id = backStackEntry.arguments?.getInt("id")
-                val pokemon = (uiState as? PokemonUiState.Success)?.pokemon?.find { it.id == id }
+                val pokemon = uiState.pokemon.find { it.id == id }
                 if (pokemon != null) {
                     PokemonDetailScreen(
                         pokemon = pokemon,
-                        onToggleCaptured = { viewModel.toggleCaptured(it) },
+                        onIntent = viewModel::onIntent,
                     )
                 }
             }

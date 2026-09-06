@@ -17,7 +17,7 @@ It consumes the [pokemon-tracker-api](https://github.com/davenotdavid/pokemon-tr
 ## Tech stack
 
 - Kotlin + Jetpack Compose
-- MVVM (`ViewModel` + `StateFlow`)
+- MVI (`ViewModel` + `StateFlow`, single `UiState` + sealed `Intent`)
 - Hilt for dependency injection
 - Retrofit + OkHttp + Gson for networking
 - Room DB for local caching/offline support
@@ -26,14 +26,15 @@ It consumes the [pokemon-tracker-api](https://github.com/davenotdavid/pokemon-tr
 
 ## Architecture
 
-MVVM with a unidirectional data flow: the UI never mutates state directly, it only calls
-functions on the `ViewModel` (`loadPokemon()`, `toggleCaptured()`). The `ViewModel` exposes an
-immutable `StateFlow<PokemonUiState>` (`Loading` / `Error` / `Success`) that Compose collects and
-renders, so every state change replaces the whole object rather than mutating pieces of it in
-place. The `ViewModel` delegates to `PokemonRepository`, which tries the network first and falls
-back to the local Room cache on failure. Dependencies are constructor-injected via Hilt, which is
-what lets `PokemonRepository` and `PokemonViewModel` be unit tested with MockK fakes instead of
-the real network/database.
+MVI with a unidirectional data flow: the UI never mutates state directly, it only dispatches a
+sealed `PokemonIntent` (`LoadPokemon`, `Refresh`, `ToggleCaptured`) through the `ViewModel`'s
+single `onIntent()` entry point. The `ViewModel` exposes one immutable `StateFlow<PokemonUiState>`
+— a single data class holding the Pokemon list plus `isLoading` / `isRefreshing` / `isOffline` /
+`errorMessage` flags — that Compose collects and renders, so every state change replaces the whole
+object rather than mutating pieces of it in place. The `ViewModel` delegates to
+`PokemonRepository`, which tries the network first and falls back to the local Room cache on
+failure. Dependencies are constructor-injected via Hilt, which is what lets `PokemonRepository`
+and `PokemonViewModel` be unit tested with MockK fakes instead of the real network/database.
 
 ## Running the app
 

@@ -28,29 +28,37 @@ output (Timber-tagged, e.g. `PokemonViewModel$loadPokemon`) from the rest of the
 
 ## Architecture
 
-**Data flow is one-directional and network-first-with-cache-fallback, not reactive.** Compose
-screens (`ui/PokemonListScreen.kt`, `ui/PokemonDetailScreen.kt`) never mutate state — they only
-call functions on `PokemonViewModel` (`loadPokemon()`, `toggleCaptured()`) and render whatever
-comes back on its `StateFlow<PokemonUiState>` (sealed: `Loading` / `Error` / `Success`, all
-immutable). `PokemonViewModel` calls plain suspend functions on `PokemonRepository`, which are
-themselves imperative try/catch, not Room `Flow` observation:
+**MVI: one sealed `Intent`, one `UiState`, one dispatch function.** Compose screens
+(`ui/PokemonListScreen.kt`, `ui/PokemonDetailScreen.kt`) never mutate state or call named
+ViewModel methods — they only dispatch a `PokemonIntent` (`LoadPokemon` / `Refresh` /
+`ToggleCaptured`) through `PokemonViewModel.onIntent()`, and render whatever comes back on its
+single `StateFlow<PokemonUiState>`. `PokemonUiState` is one immutable data class (`pokemon`,
+`isLoading`, `isRefreshing`, `isOffline`, `errorMessage`), not a sealed Loading/Error/Success
+hierarchy — every field is updated via `_uiState.update { it.copy(...) }`, never split across
+multiple flows. If you add a new user action, add a case to `PokemonIntent` and a `when` branch
+in `onIntent()`; don't add another public function to `PokemonViewModel` as a side entry point.
+
+**Data flow is network-first-with-cache-fallback, not reactive.** `PokemonViewModel` calls plain
+suspend functions on `PokemonRepository`, which are themselves imperative try/catch, not Room
+`Flow` observation:
 
 - `refreshFromNetwork()` hits the API and writes the result through to Room; throws on failure.
 - `getCached()` reads whatever's currently in Room.
 - `setCaptured()` tries the network `PUT`; if that throws, it just applies the toggle locally
   and writes that to Room instead — it never rethrows except for `CancellationException`.
 
-`PokemonViewModel.loadPokemon()` tries `refreshFromNetwork()` first and only falls back to
-`getCached()` in the catch block (showing `PokemonUiState.Error` only if the cache is *also*
+`onIntent`'s `LoadPokemon`/`Refresh` handling tries `refreshFromNetwork()` first and only falls
+back to `getCached()` in the catch block (setting `errorMessage` only if the cache is *also*
 empty). This was a deliberate simplification from an earlier `combine()`-of-three-flows design —
 if you're tempted to make the repository reactive (Room `Flow` as source of truth), that's a
 bigger architectural change than it looks like; ask before doing it.
 
 **`CancellationException` handling is a real invariant, not boilerplate.** Both
-`PokemonRepository.setCaptured()` and `PokemonViewModel.loadPokemon()` explicitly re-throw
-`CancellationException` before falling into their broad `catch (ex: Exception)` blocks. Any new
-catch-and-fall-back code added to either class needs the same guard, or coroutine cancellation
-(e.g. the ViewModel being cleared mid-request) gets silently misread as a network failure.
+`PokemonRepository.setCaptured()` and the private `loadPokemon()` handler in `PokemonViewModel`
+explicitly re-throw `CancellationException` before falling into their broad `catch (ex:
+Exception)` blocks. Any new catch-and-fall-back code added to either class needs the same guard,
+or coroutine cancellation (e.g. the ViewModel being cleared mid-request) gets silently misread as
+a network failure.
 
 **One `Pokemon` model, not separate DTO/entity/domain types.** `data/Pokemon.kt` is
 simultaneously the Gson network model, the Room `@Entity` (`@PrimaryKey val id`), and the UI
@@ -75,8 +83,8 @@ backend wired up for unplanted `Timber` calls to feed.
 **Testing ViewModels needs `Dispatchers.setMain`.** `PokemonViewModel` runs its coroutines on
 `viewModelScope` (`Dispatchers.Main.immediate`), so any test needs `Dispatchers.setMain
 (UnconfinedTestDispatcher())` in `@Before` / `Dispatchers.resetMain()` in `@After` — see
-`PokemonViewModelTest` for the pattern. Without it, `init { loadPokemon() }` throws because
-there's no Main dispatcher on the JVM test runner.
+`PokemonViewModelTest` for the pattern. Without it, `init { onIntent(PokemonIntent.LoadPokemon) }`
+throws because there's no Main dispatcher on the JVM test runner.
 
 **Networking target and cleartext HTTP.** `BASE_URL` in `di/NetworkModule.kt` points at a live
 AWS EC2 demo of the sibling `pokemon-tracker-api` repo (`http://54.209.33.157/`, plain HTTP, no
