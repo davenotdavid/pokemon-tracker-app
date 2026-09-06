@@ -35,6 +35,11 @@ back to the local Room cache on failure. Dependencies are constructor-injected v
 what lets `PokemonRepository` and `PokemonViewModel` be unit tested with MockK fakes instead of
 the real network/database.
 
+An MVI take on this same screen (single `UiState` + sealed `Intent` dispatched through one
+`onIntent()` entry point) is up on the
+[`feature/arch-mvi`](https://github.com/davenotdavid/pokemon-tracker-app/tree/feature/arch-mvi)
+branch.
+
 ## Running the app
 
 Open the project in Android Studio and run the `app` configuration on an emulator or device.
